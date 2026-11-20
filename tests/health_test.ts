@@ -1,10 +1,17 @@
 // STUDENT NAME, STUDENT NUMBER
-import { assertEquals } from "@std/assert";
+import { deepStrictEqual as assertEquals } from "node:assert";
 import { freshApp } from "./helpers.ts";
 
 Deno.test("GET /health answers 200 and { ok: true }", async () => {
-  const app = await freshApp();
+  using app = await freshApp();
   const res = await app.request("/health");
   assertEquals(res.status, 200);
   assertEquals(await res.json(), { ok: true });
+});
+
+Deno.test("unknown routes use the shared error shape", async () => {
+  using app = await freshApp();
+  const response = await app.request("/missing");
+  assertEquals(response.status, 404);
+  assertEquals(await response.json(), { error: "not found", issues: [] });
 });

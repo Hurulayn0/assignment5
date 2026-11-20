@@ -123,8 +123,8 @@ export default function App() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />{" "}
-            <button onClick={() => auth("login")}>Log in</button>{" "}
-            <button onClick={() => auth("register")}>Register</button>
+            <button type="button" onClick={() => auth("login")}>Log in</button>{" "}
+            <button type="button" onClick={() => auth("register")}>Register</button>
           </section>
         )
         : (
@@ -132,6 +132,7 @@ export default function App() {
             <p>
               Logged in.{" "}
               <button
+                type="button"
                 onClick={() => {
                   setToken("");
                   setTasks([]);
@@ -146,13 +147,17 @@ export default function App() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />{" "}
-              <button>Add</button>
+              <button type="submit">Add</button>
             </form>
             <ul>
               {tasks.map((t) => (
                 <li key={t.id}>
-                  {t.title} <button onClick={() => advance(t)}>{t.status}</button>{" "}
-                  <button onClick={() => remove(t)} aria-label="delete">x</button>
+                  {t.title}{" "}
+                  <button type="button" onClick={() => advance(t)}>{t.status}</button>
+                  {" "}
+                  <button type="button" onClick={() => remove(t)} aria-label="delete">
+                    x
+                  </button>
                 </li>
               ))}
             </ul>

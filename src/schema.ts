@@ -1,5 +1,5 @@
 // STUDENT NAME, STUDENT NUMBER
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 // Worked example: the users table.
@@ -18,5 +18,17 @@ export const sessions = sqliteTable("sessions", {
   expiresAt: integer("expires_at").notNull(),
 });
 
-// TODO R2: define `tasks` the same way. Status is a text column restricted to
-// "todo" | "in-progress" | "done". A task belongs to one user (userId).
+export const taskStatuses = ["todo", "in-progress", "done"] as const;
+export const taskPriorities = ["low", "medium", "high"] as const;
+
+export const tasks = sqliteTable("tasks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  status: text("status", { enum: taskStatuses }).notNull().default("todo"),
+  priority: text("priority", { enum: taskPriorities }).notNull().default("medium"),
+  createdAt: integer("created_at").notNull().default(sql`(strftime('%s','now'))`),
+}, (table) => [
+  check("tasks_status_check", sql`${table.status} IN ('todo', 'in-progress', 'done')`),
+  check("tasks_priority_check", sql`${table.priority} IN ('low', 'medium', 'high')`),
+]);

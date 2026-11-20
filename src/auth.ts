@@ -1,4 +1,5 @@
 // STUDENT NAME, STUDENT NUMBER
+import type { MiddlewareHandler } from "hono";
 import bcrypt from "bcryptjs";
 import type { Db } from "./db.ts";
 
@@ -29,6 +30,12 @@ export async function userIdFromToken(db: Db, token: string): Promise<number | n
   return id === undefined ? null : Number(id);
 }
 
-// TODO R3: write a Hono middleware factory `requireAuth(db)` that reads "Authorization: Bearer <token>",
-// answers 401 when it is missing or unknown (use userIdFromToken), and otherwise stores the
-// user id with c.set("userId", id) so that the routes can use it.
+export type Env = { Variables: { userId: number } };
+
+export const requireAuth = (db: Db): MiddlewareHandler<Env> => async (c, next) => {
+  const token = /^Bearer ([^\s]+)$/i.exec(c.req.header("authorization") ?? "")?.[1];
+  const id = token ? await userIdFromToken(db, token) : null;
+  if (id === null) return c.json({ error: "unauthorized", issues: [] }, 401);
+  c.set("userId", id);
+  await next();
+};
