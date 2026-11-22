@@ -1,4 +1,4 @@
-# Tasks API — STUDENT NAME, STUDENT NUMBER
+# Tasks API — Huriye Kayadelen, 2200005795
 
 ## Run locally
 
@@ -27,33 +27,77 @@ The server defaults to port 8000 and the database file `tasks.db`. Override `POR
   and records the creation time in Unix seconds. SQLite constraints enforce the allowed
   status and priority values.
 
+- Task reads, updates and deletes match both the task ID and authenticated owner. A 404
+  keeps the existence of another user's task private. List and count use the same owner
+  and status filters, with ascending IDs giving a stable page order.
+- The task list defaults to page 1 and limit 20. The maximum limit is 100. POST and PUT
+  use the same schema: a trimmed title of 1 to 100 characters, status defaulting to
+  `todo`, and priority defaulting to `medium`.
+
 ## API with curl
 
-These responses came from a local run with `PORT=18005` and an empty demo database. The
-token in the login response is redacted. With the default port, replace 18005 with 8000.
-These examples use a POSIX shell.
+These JSON responses and HTTP status codes were captured with curl against a local server
+backed by a fresh database. The examples use the default port and a POSIX shell. The login
+response has its token redacted.
 
 ```sh
-curl -sS -w '\n%{http_code}\n' http://localhost:18005/health
+curl -sS -w '\n%{http_code}\n' http://localhost:8000/health
 # {"ok":true}
 # 200
 
-curl -sS -w '\n%{http_code}\n' http://localhost:18005/auth/register \
+curl -sS -w '\n%{http_code}\n' http://localhost:8000/auth/register \
   -H 'Content-Type: application/json' \
   --data '{"email":"day1@example.com","password":"demo-pass-123"}'
 # {"id":1,"email":"day1@example.com"}
 # 201
 
-curl -sS -w '\n%{http_code}\n' http://localhost:18005/auth/login \
+curl -sS -w '\n%{http_code}\n' http://localhost:8000/auth/login \
   -H 'Content-Type: application/json' \
   --data '{"email":"day1@example.com","password":"demo-pass-123"}'
 # {"token":"[redacted]"}
 # 200
 ```
 
+Use the token returned by login for all task requests. The examples assume a fresh
+database where the first task has ID 1.
+
+```sh
+export TOKEN='<token from /auth/login>'
+
+curl -sS -w '\n%{http_code}\n' http://localhost:8000/api/tasks \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  --data '{"title":"Review API contract"}'
+# {"id":1,"userId":1,"title":"Review API contract","status":"todo","priority":"medium","createdAt":1795258758}
+# 201
+
+curl -sS -w '\n%{http_code}\n' 'http://localhost:8000/api/tasks?status=todo&page=1&limit=2' \
+  -H "Authorization: Bearer $TOKEN"
+# {"items":[{"id":1,"userId":1,"title":"Review API contract","status":"todo","priority":"medium","createdAt":1795258758}],"page":1,"limit":2,"total":1}
+# 200
+
+curl -sS -w '\n%{http_code}\n' http://localhost:8000/api/tasks/1 \
+  -H "Authorization: Bearer $TOKEN"
+# {"id":1,"userId":1,"title":"Review API contract","status":"todo","priority":"medium","createdAt":1795258758}
+# 200
+
+curl -sS -w '\n%{http_code}\n' -X PUT http://localhost:8000/api/tasks/1 \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  --data '{"title":"Approve API contract","status":"done","priority":"high"}'
+# {"id":1,"userId":1,"title":"Approve API contract","status":"done","priority":"high","createdAt":1795258758}
+# 200
+
+curl -sS -w '\n%{http_code}\n' -X DELETE http://localhost:8000/api/tasks/1 \
+  -H "Authorization: Bearer $TOKEN"
+# {"ok":true}
+# 200
+```
+
 ## My own log
 
-Development notes from the day-one run.
+Getting the first test to run took extra time. After resolving the certificate error, the
+cache directory still refused writes. Checking task ownership also took extra time. With
+two test accounts, removing the owner check made the API return 200 instead of 404.
+Restoring the check brought all 18 tests back to green.
 
 - Deno reported `invalid peer certificate: UnknownIssuer` when downloading from the npm
   registry. I populated a workspace-local cache in a one-time download scoped to that
