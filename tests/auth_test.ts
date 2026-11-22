@@ -1,4 +1,4 @@
-// STUDENT NAME, STUDENT NUMBER
+// Huriye Kayadelen, 2200005795
 import { deepStrictEqual, ok } from "node:assert";
 import { checkPassword } from "../src/auth.ts";
 import { freshApp } from "./helpers.ts";

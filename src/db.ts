@@ -1,4 +1,4 @@
-// STUDENT NAME, STUDENT NUMBER
+// Huriye Kayadelen, 2200005795
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./schema.ts";

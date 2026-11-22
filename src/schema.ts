@@ -1,4 +1,4 @@
-// STUDENT NAME, STUDENT NUMBER
+// Huriye Kayadelen, 2200005795
 import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 

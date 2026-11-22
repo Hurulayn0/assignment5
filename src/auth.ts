@@ -1,4 +1,4 @@
-// STUDENT NAME, STUDENT NUMBER
+// Huriye Kayadelen, 2200005795
 import type { MiddlewareHandler } from "hono";
 import bcrypt from "bcryptjs";
 import type { Db } from "./db.ts";
