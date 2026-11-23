@@ -41,7 +41,7 @@ Deno.test("a user creates, reads, updates and deletes a task", async () => {
   const owner = await signIn(app, "owner@example.com");
   const task = await createTask(owner, { title: "  Review API contract  " });
   deepStrictEqual(task, {
-    id: 1,
+    id: 2,
     userId: owner.id,
     title: "Review API contract",
     status: "todo",

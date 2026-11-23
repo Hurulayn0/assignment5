@@ -1,5 +1,6 @@
 // Huriye Kayadelen, 2200005795
 import type { MiddlewareHandler } from "hono";
+import { jwtOwner } from "./jwt.ts";
 import bcrypt from "bcryptjs";
 import type { Db } from "./db.ts";
 
@@ -32,10 +33,13 @@ export async function userIdFromToken(db: Db, token: string): Promise<number | n
 
 export type Env = { Variables: { userId: number } };
 
-export const requireAuth = (db: Db): MiddlewareHandler<Env> => async (c, next) => {
-  const token = /^Bearer ([^\s]+)$/i.exec(c.req.header("authorization") ?? "")?.[1];
-  const id = token ? await userIdFromToken(db, token) : null;
-  if (id === null) return c.json({ error: "unauthorized", issues: [] }, 401);
-  c.set("userId", id);
-  await next();
-};
+export const requireAuth =
+  (db: Db, jwtSecret?: string): MiddlewareHandler<Env> => async (c, next) => {
+    const token = /^Bearer ([^\s]+)$/i.exec(c.req.header("authorization") ?? "")?.[1];
+    const id = token
+      ? (jwtSecret ? await jwtOwner(token, jwtSecret) : await userIdFromToken(db, token))
+      : null;
+    if (id === null) return c.json({ error: "unauthorized", issues: [] }, 401);
+    c.set("userId", id);
+    await next();
+  };

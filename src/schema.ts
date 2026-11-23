@@ -1,11 +1,12 @@
 // Huriye Kayadelen, 2200005795
-import { check, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { check, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 // Worked example: the users table.
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   email: text("email").notNull().unique(),
+  role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
   passwordHash: text("password_hash").notNull(),
   // A SQL default runs for every row. A JavaScript Date.now() here would run once.
   createdAt: integer("created_at").notNull().default(sql`(strftime('%s','now'))`),
@@ -24,11 +25,15 @@ export const taskPriorities = ["low", "medium", "high"] as const;
 export const tasks = sqliteTable("tasks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id),
+  attachment: text("attachment"),
+  deletedAt: integer("deleted_at"),
+  doneAt: integer("done_at"),
   title: text("title").notNull(),
   status: text("status", { enum: taskStatuses }).notNull().default("todo"),
   priority: text("priority", { enum: taskPriorities }).notNull().default("medium"),
   createdAt: integer("created_at").notNull().default(sql`(strftime('%s','now'))`),
 }, (table) => [
+  index("idx_tasks_user_status").on(table.userId, table.status),
   check("tasks_status_check", sql`${table.status} IN ('todo', 'in-progress', 'done')`),
   check("tasks_priority_check", sql`${table.priority} IN ('low', 'medium', 'high')`),
 ]);

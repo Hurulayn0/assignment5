@@ -3,3 +3,7 @@ dist
 *.db
 *.db-journal
 .env
+uploads/
+*.db-wal
+*.db-shm
+assignment5.zip

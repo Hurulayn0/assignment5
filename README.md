@@ -114,3 +114,18 @@ Restoring the check brought all 18 tests back to green.
 - Windows returned `os error 32` when the test fixture tried to unlink a database
   immediately after closing libSQL. The fixture closes the client and leaves the database
   file in the OS temp directory.
+
+## Bonus 5: Seed data
+
+Run `deno task seed` in development. Sign in with planner@example.com or
+reviewer@example.com using the local demo password `demo-only-123`. Each account gets ten
+tasks. A transaction skips task creation for an account that already has tasks. The seed
+refuses production before opening the database.
+
+## Bonus 15: Rate limit on login
+
+Five failed logins for one normalized email start a one-minute lockout measured from the
+first failure. A sixth request receives 429 and Retry-After in seconds, including when the
+password is correct. Successful login clears the counter. Instances sharing the same
+database share the counters. Separate databases and attempts distributed over many email
+addresses need separate controls.

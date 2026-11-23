@@ -1,0 +1,8 @@
+.git
+ui
+tests
+uploads
+*.db*
+.env
+*.zip
+node_modules
