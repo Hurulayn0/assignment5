@@ -25,6 +25,7 @@ export const taskPriorities = ["low", "medium", "high"] as const;
 export const tasks = sqliteTable("tasks", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id),
+  estimateMinutes: integer("estimate_minutes"),
   attachment: text("attachment"),
   deletedAt: integer("deleted_at"),
   doneAt: integer("done_at"),

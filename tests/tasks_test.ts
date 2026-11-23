@@ -42,6 +42,7 @@ Deno.test("a user creates, reads, updates and deletes a task", async () => {
   const task = await createTask(owner, { title: "  Review API contract  " });
   deepStrictEqual(task, {
     id: 2,
+    estimateMinutes: null,
     userId: owner.id,
     title: "Review API contract",
     status: "todo",
@@ -148,6 +149,7 @@ Deno.test("create and update reject invalid task bodies", async () => {
         { title: "Valid", status: "invalid" },
         { title: "Valid", priority: "urgent" },
         { title: "Valid", userId: 999 },
+        { title: "Invalid estimate", estimateMinutes: -1 },
       ]
     ) {
       const response = await owner.request(endpoint, method, body);

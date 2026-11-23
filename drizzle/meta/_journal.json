@@ -15,6 +15,13 @@
       "when": 1795466828211,
       "tag": "0001_task_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795467160575,
+      "tag": "0002_task_estimates",
+      "breakpoints": true
     }
   ]
 }

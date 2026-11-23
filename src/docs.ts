@@ -11,6 +11,7 @@ const ok = z.object({ ok: z.boolean() });
 const id = z.number().int();
 const account = z.object({ id, email: z.email() });
 const task = z.object({
+  estimateMinutes: z.number().int().nullable(),
   id,
   userId: id,
   title: z.string(),

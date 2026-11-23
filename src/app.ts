@@ -33,6 +33,7 @@ const credentials = z.strictObject({
 });
 
 const taskInput = z.strictObject({
+  estimateMinutes: z.number().int().min(1).max(1440).nullable().default(null),
   title: z.string().trim().min(1).max(100),
   status: z.enum(taskStatuses).default("todo"),
   priority: z.enum(taskPriorities).default("medium"),
@@ -59,6 +60,7 @@ const noQuery: MiddlewareHandler<Env> = async (c, next) => {
 
 const notFound = { error: "not found", issues: [] };
 const publicTask = {
+  estimateMinutes: tasks.estimateMinutes,
   id: tasks.id,
   userId: tasks.userId,
   title: tasks.title,
@@ -261,12 +263,16 @@ export function createApp(
     }
     return row ? c.json(row) : c.json(notFound, 404);
   });
-  app.get("/api/admin/users", noQuery, async (c) => {
-    const account = await db.query.users.findFirst({
-      where: eq(users.id, c.get("userId")),
-      columns: { role: true },
-    });
-    if (account?.role !== "admin") return c.json({ error: "forbidden", issues: [] }, 403);
+  const requireRole =
+    (role: "user" | "admin"): MiddlewareHandler<Env> => async (c, next) => {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, c.get("userId")),
+        columns: { role: true },
+      });
+      if (user?.role !== role) return c.json({ error: "forbidden", issues: [] }, 403);
+      await next();
+    };
+  app.get("/api/admin/users", noQuery, requireRole("admin"), async (c) => {
     return c.json(
       await db.select({ id: users.id, email: users.email, role: users.role }).from(users)
         .orderBy(users.id),
