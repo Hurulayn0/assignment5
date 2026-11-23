@@ -66,7 +66,10 @@ Deno.test("a user creates, reads, updates and deletes a task", async () => {
   for (const [method, body] of [["GET"], ["PUT", replacement], ["DELETE"]] as const) {
     const missing = await owner.request(path, method, body);
     deepStrictEqual(missing.status, 404);
-    deepStrictEqual(await missing.json(), notFound);
+    deepStrictEqual(await missing.json(), {
+      ...notFound,
+      requestId: missing.headers.get("x-request-id"),
+    });
   }
 });
 
@@ -120,7 +123,10 @@ Deno.test("another user's task is absent from list, read, update and delete", as
   ) {
     const response = await other.request(path, method, body);
     deepStrictEqual(response.status, 404);
-    deepStrictEqual(await response.json(), notFound);
+    deepStrictEqual(await response.json(), {
+      ...notFound,
+      requestId: response.headers.get("x-request-id"),
+    });
   }
   const list = await other.request(route + "?status=done");
   deepStrictEqual(list.status, 200);
@@ -210,6 +216,9 @@ Deno.test("an invalid task identifier returns the same 404 as a missing task", a
   for (const id of ["xyz", "1.5", "0", "9007199254740992"]) {
     const response = await owner.request(`${route}/${id}`);
     deepStrictEqual(response.status, 404);
-    deepStrictEqual(await response.json(), notFound);
+    deepStrictEqual(await response.json(), {
+      ...notFound,
+      requestId: response.headers.get("x-request-id"),
+    });
   }
 });

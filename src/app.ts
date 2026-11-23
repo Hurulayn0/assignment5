@@ -1,7 +1,11 @@
 // Huriye Kayadelen, 2200005795
 import { and, asc, count, eq, isNotNull, isNull, sql } from "drizzle-orm";
-import { Hono, type MiddlewareHandler } from "hono";
+import type { MiddlewareHandler } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { configureDocs } from "./docs.ts";
 import { clearFailures, recordFailure, retryAfter } from "./login_limits.ts";
+import { requestLog } from "./observability.ts";
+import type { TaskCache } from "./cache.ts";
 import { attachmentRoutes } from "./attachments.ts";
 import { LiveUpdates } from "./live.ts";
 import { userIdFromToken } from "./auth.ts";
@@ -65,11 +69,19 @@ const publicTask = {
 const ownedTask = (id: number, userId: number) =>
   and(eq(tasks.id, id), eq(tasks.userId, userId), isNull(tasks.deletedAt));
 
-export function createApp(database: Db, jwtSecret?: string, uploadFolder = "uploads") {
+export function createApp(
+  database: Db,
+  jwtSecret?: string,
+  uploadFolder = "uploads",
+  cache?: TaskCache,
+  live = new LiveUpdates(),
+) {
   const { db } = database;
-  const app = new Hono<Env>();
+  const app = new OpenAPIHono<Env>();
+  app.use("*", requestLog);
   app.use("/api/*", requireAuth(database, jwtSecret));
-  const live = new LiveUpdates();
+
+  configureDocs(app, credentials, taskInput);
   attachmentRoutes(app, database, uploadFolder);
   app.get("/ws", async (c) => {
     const query = z.strictObject({ token: z.tuple([z.string().min(1)]) }).safeParse(
@@ -193,9 +205,10 @@ export function createApp(database: Db, jwtSecret?: string, uploadFolder = "uplo
   app.get("/api/tasks/:id", noQuery, async (c) => {
     const id = positiveInteger.safeParse(c.req.param("id"));
     if (!id.success) return c.json(notFound, 404);
-    const [task] = await db.select(publicTask).from(tasks).where(
-      ownedTask(id.data, c.get("userId")),
-    );
+    const owner = c.get("userId");
+    const load = async () =>
+      (await db.select(publicTask).from(tasks).where(ownedTask(id.data, owner)))[0];
+    const task = cache ? await cache.get(owner, id.data, load) : await load();
     return task ? c.json(task) : c.json(notFound, 404);
   });
 
@@ -215,6 +228,7 @@ export function createApp(database: Db, jwtSecret?: string, uploadFolder = "uplo
         : null,
     })
       .where(ownedTask(id.data, c.get("userId"))).returning(publicTask);
+    if (task) await cache?.invalidate(c.get("userId"), id.data);
     if (task) live.send(c.get("userId"), "updated", task);
     return task ? c.json(task) : c.json(notFound, 404);
   });
@@ -226,6 +240,7 @@ export function createApp(database: Db, jwtSecret?: string, uploadFolder = "uplo
       deletedAt: Math.floor(Date.now() / 1000),
     }).where(ownedTask(id.data, c.get("userId")))
       .returning({ id: tasks.id });
+    if (task) await cache?.invalidate(c.get("userId"), id.data);
     if (task) live.send(c.get("userId"), "deleted", task);
     return task ? c.json({ ok: true }) : c.json(notFound, 404);
   });
@@ -240,6 +255,10 @@ export function createApp(database: Db, jwtSecret?: string, uploadFolder = "uplo
         isNotNull(tasks.deletedAt),
       ),
     ).returning(publicTask);
+    if (row) {
+      await cache?.invalidate(c.get("userId"), id.data);
+      live.send(c.get("userId"), "restored", row);
+    }
     return row ? c.json(row) : c.json(notFound, 404);
   });
   app.get("/api/admin/users", noQuery, async (c) => {

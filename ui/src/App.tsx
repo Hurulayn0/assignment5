@@ -43,7 +43,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (token) load(token);
+    if (!token) return;
+    load(token);
+    const url = new URL("/ws", globalThis.location.href);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    url.searchParams.set("token", token);
+    const socket = new WebSocket(url);
+    socket.onmessage = () => {
+      void load(token);
+    };
+    return () => socket.close();
   }, [token, load]);
 
   async function auth(kind: "register" | "login") {

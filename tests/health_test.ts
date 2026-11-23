@@ -13,5 +13,7 @@ Deno.test("unknown routes use the shared error shape", async () => {
   using app = await freshApp();
   const response = await app.request("/missing");
   assertEquals(response.status, 404);
-  assertEquals(await response.json(), { error: "not found", issues: [] });
+  const requestId = response.headers.get("x-request-id");
+  assertEquals(typeof requestId, "string");
+  assertEquals(await response.json(), { error: "not found", issues: [], requestId });
 });

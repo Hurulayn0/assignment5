@@ -12,3 +12,9 @@ jobs:
       - run: deno lint
       - run: deno task check
       - run: deno task test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/docker_smoke.sh

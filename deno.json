@@ -1,11 +1,13 @@
 {
   "tasks": {
-    "start:test": "deno run -A --unstable-cron --env-file=.env.test src/main.ts",
-    "start:production": "deno run -A --unstable-cron --env-file=.env.production src/main.ts",
+    "db:generate": "deno run -A --node-modules-dir=auto npm:drizzle-kit@0.31.4 generate",
+    "db:migrate": "deno run -A scripts/migrate.ts",
+    "start:test": "deno run -A --unstable-cron --unstable-kv --env-file=.env.test src/main.ts",
+    "start:production": "deno run -A --unstable-cron --unstable-kv --env-file=.env.production src/main.ts",
     "seed": "deno run -A scripts/seed.ts",
-    "dev": "deno run -A --unstable-cron --watch src/main.ts",
-    "start": "deno run -A --unstable-cron src/main.ts",
-    "test": "deno test -A",
+    "dev": "deno run -A --unstable-cron --unstable-kv --watch src/main.ts",
+    "start": "deno run -A --unstable-cron --unstable-kv src/main.ts",
+    "test": "deno test -A --unstable-kv",
     "check": "deno check src/*.ts tests/*.ts",
     "fmt": "deno fmt",
     "lint": "deno lint",
@@ -13,6 +15,10 @@
     "ui:dev": "cd ui && deno task dev"
   },
   "imports": {
+    "drizzle-kit": "npm:drizzle-kit@0.31.4",
+    "jose": "npm:jose@^6",
+    "@hono/zod-openapi": "npm:@hono/zod-openapi@^1",
+    "drizzle-orm/libsql/migrator": "npm:drizzle-orm@^0.44/libsql/migrator",
     "hono": "npm:hono@^4",
     "zod": "npm:zod@^4",
     "bcryptjs": "npm:bcryptjs@^3",

@@ -37,3 +37,9 @@ export const tasks = sqliteTable("tasks", {
   check("tasks_status_check", sql`${table.status} IN ('todo', 'in-progress', 'done')`),
   check("tasks_priority_check", sql`${table.priority} IN ('low', 'medium', 'high')`),
 ]);
+
+export const loginFailures = sqliteTable("login_failures", {
+  email: text("email").primaryKey(),
+  failures: integer("failures").notNull(),
+  resetAt: integer("reset_at").notNull(),
+});

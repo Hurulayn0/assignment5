@@ -1,6 +1,8 @@
 // Huriye Kayadelen, 2200005795
 import { z } from "zod";
 const schema = z.object({
+  KV_PATH: z.string().optional(),
+  UPLOAD_DIR: z.string().min(1).default("uploads"),
   PORT: z.coerce.number().int().min(1).max(65535).default(8000),
   APP_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().regex(/^(file:|libsql:\/\/|https:\/\/).+/).default(
