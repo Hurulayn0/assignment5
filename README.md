@@ -173,6 +173,15 @@ looking up each status issued 1,001 queries. Grouping by status issued one query
 returned the same counts (334 todo, 333 in-progress, 333 done). The API also excludes
 deleted tasks and returns zero for absent groups.
 
+The benchmark's SQL shapes are shown below. The second statement runs once for each ID.
+The last statement is the production aggregation.
+
+```sql
+SELECT id FROM tasks WHERE user_id = ?;
+SELECT status FROM tasks WHERE id = ?;
+SELECT status, COUNT(*) FROM tasks WHERE user_id = ? AND deleted_at IS NULL GROUP BY status;
+```
+
 ## Bonus 4: Indexes and EXPLAIN
 
 The same script measures twenty reads on 20,000 tasks across twenty owners. Before
@@ -202,12 +211,20 @@ Each connection waits up to five seconds for a busy database. A FIFO queue serve
 when all connections are busy. A finally block releases the slot even when the handler
 throws. The concurrency test schedules twenty jobs.
 
+Three slots allow overlapping reads while bounding open file handles. SQLite serializes
+writers even with WAL, so adding more slots offers limited gains for write-heavy traffic.
+Postgres can execute independent writes concurrently.
+
 ## Bonus 7: JWT instead of sessions
 
 Set AUTH_MODE=jwt and supply JWT_SECRET through the environment. Login signs an expiring
 HS256 token with JOSE. Protected routes verify its signature and expiry before trusting
 its subject. Session mode remains available for the core assignment. Tests cover expired,
 altered and differently signed tokens.
+
+Deleting a session row revokes an opaque token immediately and each request pays for a
+database lookup. JWT verification avoids that lookup. A signed token remains usable until
+expiry unless a separate revocation mechanism is added.
 
 ## Bonus 8: OpenAPI and a docs page
 
@@ -220,6 +237,9 @@ constraints.
 New registrations receive the user role. An administrator can promote an existing account
 directly in the database. GET /api/admin/users checks its caller's stored role. The curl
 transcript shows 403 before promotion and 200 afterward.
+
+A missing or invalid credential receives 401. A user with a valid credential and
+insufficient privileges receives 403.
 
 ## Bonus 10: Logging and request ids
 
