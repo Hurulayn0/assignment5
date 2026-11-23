@@ -14,7 +14,13 @@ trap cleanup EXIT
 start() {
   docker run -d --name "$container" -p 127.0.0.1::8000 -v "$volume:/data" "$image" >/dev/null
   base="http://$(docker port "$container" 8000/tcp)"
-  curl --fail --silent --show-error --retry 20 --retry-connrefused "$base/readyz"
+  for attempt in {1..40}; do
+    if curl -fsS --max-time 2 "$base/readyz"; then return 0; fi
+    if [[ "$(docker inspect --format '{{.State.Running}}' "$container")" != true ]]; then break; fi
+    sleep 1
+  done
+  docker logs "$container"
+  return 1
 }
 register() {
   curl -sS -w '\n%{http_code}' -H 'Content-Type: application/json' --data '{"email":"docker@example.com","password":"container-demo-123"}' "$base/auth/register"

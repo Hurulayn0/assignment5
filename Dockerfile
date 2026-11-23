@@ -1,4 +1,4 @@
-FROM denoland/deno:2.6.3
+FROM denoland/deno:2.9.7
 WORKDIR /app
 COPY deno.json deno.lock ./
 COPY src ./src
