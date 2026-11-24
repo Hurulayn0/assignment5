@@ -322,12 +322,26 @@ deliberately failing test ran on a separate proof branch.
 
 ## Bonus 19: Deploy
 
-Pending. The configuration accepts a remote libSQL URL and database authentication token.
-A verified deployment and public health URL still require a hosting project and
-provisioned database.
+The Tasks API runs on Render's free web service using the repository Dockerfile. Deno
+Deploy registration was closed, so I used the instructor-approved Docker alternative. I
+connected the main branch to Render and configured the existing Turso database URL and its
+database-scoped token in Render's environment settings. The service applies the Drizzle
+migrations at startup. The free instance may take a moment to wake up.
+
+[Live health check](https://assignment5-zjlf.onrender.com/health) ·
+[Database readiness](https://assignment5-zjlf.onrender.com/readyz)
+
+```sh
+$ curl -sS -w '\nHTTP %{http_code}\n' https://assignment5-zjlf.onrender.com/health
+{"ok":true}
+HTTP 200
+
+$ curl -sS -w '\nHTTP %{http_code}\n' https://assignment5-zjlf.onrender.com/readyz
+{"ready":true}
+HTTP 200
+```
 
 ## Bonus 20: Git repository
 
-The private repository contains the development history. Instructor access is pending
-identification of the GitHub account announced on CATS.
+The public repository contains the source code, development history and CI runs.
 [Assignment 5 on GitHub](https://github.com/Hurulayn0/assignment5).
